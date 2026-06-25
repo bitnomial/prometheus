@@ -26,16 +26,16 @@ jobs:
           - "9.10.1"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - uses: haskell-actions/setup@v2
+      - uses: haskell-actions/setup@cd0d9bdd65b20557f41bea4dbe43d0b5fbbfe553 # v2.11.0
         id: setup-haskell-cabal
         name: Setup Haskell
         with:
           ghc-version: ${{ matrix.ghc }}
           cabal-version: ${{ matrix.cabal }}
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
         name: Cache cabal-store
         with:
           path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
@@ -68,15 +68,15 @@ jobs:
           - "--stack-yaml ./stack-9.6.yaml"
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-    - uses: haskell-actions/setup@v2
+    - uses: haskell-actions/setup@cd0d9bdd65b20557f41bea4dbe43d0b5fbbfe553 # v2.11.0
       name: Setup Haskell Stack
       with:
         stack-version: ${{ matrix.stack }}
         enable-stack: true
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
       name: Cache ~/.stack
       with:
         path: ~/.stack
