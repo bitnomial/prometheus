@@ -1,4 +1,9 @@
 
+## 2.3.1
+
+*   Relax the `http-client-tls` upper bound to allow `0.4.*`.
+    [#7966](https://github.com/commercialhaskell/stackage/issues/7966)
+
 ## 2.3.0
 
 *   Change the `observeAndSample` function from the
