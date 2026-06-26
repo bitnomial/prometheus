@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoFieldSelectors #-}
 
@@ -8,6 +9,7 @@ module Prometheus.V3.Sample (
     -- * SampleValue
     SampleValue (..),
     ToSampleValue (..),
+    SampleValueNum,
 ) where
 
 import Data.Int (Int64)
@@ -49,3 +51,6 @@ instance ToSampleValue Double where
     toSampleValue = SampleValueDouble
 instance ToSampleValue Float where
     toSampleValue = SampleValueDouble . realToFrac
+
+
+type SampleValueNum a = (Num a, ToSampleValue a)
