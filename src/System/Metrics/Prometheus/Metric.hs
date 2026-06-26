@@ -19,14 +19,14 @@ data Metric
 
 
 data MetricSample
-    = CounterMetricSample CounterSample
+    = CounterMetricSample (CounterSample Int)
     | GaugeMetricSample (GaugeSample Double)
     | HistogramMetricSample HistogramSample
     | SummaryMetricSample SummarySample
 
 
 metricSample ::
-    (CounterSample -> a) ->
+    (CounterSample Int -> a) ->
     (GaugeSample Double -> a) ->
     (HistogramSample -> a) ->
     (SummarySample -> a) ->
