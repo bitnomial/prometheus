@@ -15,39 +15,39 @@ import Control.Applicative ((<$>))
 import Data.IORef (IORef, atomicModifyIORef', newIORef)
 
 
-newtype Gauge = Gauge {unGauge :: IORef Double}
-newtype GaugeSample = GaugeSample {unGaugeSample :: Double} deriving Show
+newtype Gauge a = Gauge {unGauge :: IORef a}
+newtype GaugeSample a = GaugeSample {unGaugeSample :: a} deriving (Show)
 
 
-new :: IO Gauge
+new :: (Num a) => IO (Gauge a)
 new = Gauge <$> newIORef 0
 
 
-modifyAndSample :: (Double -> Double) -> Gauge -> IO GaugeSample
+modifyAndSample :: (a -> a) -> Gauge a -> IO (GaugeSample a)
 modifyAndSample f = flip atomicModifyIORef' g . unGauge
   where
     g v = (f v, GaugeSample $ f v)
 
 
-add :: Double -> Gauge -> IO ()
+add :: (Num a) => a -> Gauge a -> IO ()
 add x g = modifyAndSample (+ x) g >> pure ()
 
 
-sub :: Double -> Gauge -> IO ()
+sub :: (Num a) => a -> Gauge a -> IO ()
 sub x g = modifyAndSample (subtract x) g >> pure ()
 
 
-inc :: Gauge -> IO ()
+inc :: (Num a) => Gauge a -> IO ()
 inc = add 1
 
 
-dec :: Gauge -> IO ()
+dec :: (Num a) => Gauge a -> IO ()
 dec = sub 1
 
 
-set :: Double -> Gauge -> IO ()
+set :: a -> Gauge a -> IO ()
 set x g = modifyAndSample (const x) g >> pure ()
 
 
-sample :: Gauge -> IO GaugeSample
+sample :: Gauge a -> IO (GaugeSample a)
 sample = modifyAndSample id

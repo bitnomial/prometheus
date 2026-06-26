@@ -103,6 +103,7 @@ library
                  , Prometheus.V3.Name
                  , Prometheus.V3.Registry
                  , Prometheus.V3.Sample
+                 , Prometheus.V3.Utils.FromRealFrac
 
   build-depends: base            >= 4.9  && < 5
                , atomic-primops  >= 0.8  && < 0.9

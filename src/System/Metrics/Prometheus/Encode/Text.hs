@@ -64,5 +64,5 @@ encodeCounter :: MetricId -> CounterSample -> Builder
 encodeCounter mid counter = encodeMetricId mid <> space <> encodeInt (unCounterSample counter)
 
 
-encodeGauge :: MetricId -> GaugeSample -> Builder
+encodeGauge :: MetricId -> GaugeSample Double -> Builder
 encodeGauge mid gauge = encodeMetricId mid <> space <> encodeDouble (unGaugeSample gauge)
