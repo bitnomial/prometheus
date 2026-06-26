@@ -60,7 +60,7 @@ encodeMetric (mid, sample) =
     encodeSummary = undefined
 
 
-encodeCounter :: MetricId -> CounterSample -> Builder
+encodeCounter :: MetricId -> CounterSample Int -> Builder
 encodeCounter mid counter = encodeMetricId mid <> space <> encodeInt (unCounterSample counter)
 
 

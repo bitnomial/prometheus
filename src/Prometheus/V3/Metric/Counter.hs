@@ -1,18 +1,25 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE NoFieldSelectors #-}
 -- Remove after inlining V2.Counter
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Prometheus.V3.Metric.Counter (
     V2.Counter,
+    V2.Counter',
     register,
     new,
 
     -- * Methods
     IsCounter,
+    IsNumCounter,
     inc,
     add,
     reset,
@@ -39,12 +46,16 @@ import UnliftIO.Exception (Exception, withException)
 
 
 -- | An alias for @'Registry.register' (new ...)@.
-register :: MetricName -> Description -> V2.Counter
+register ::
+    (Num a, Ord a, ToSampleValue a, V2.HasCounterBackend a) =>
+    MetricName -> Description -> (V2.Counter' a)
 register name description = Registry.register $ new name description
 {-# INLINE register #-}
 
 
-new :: MetricName -> Description -> Metric V2.Counter
+new ::
+    (Num a, V2.HasCounterBackend a) =>
+    MetricName -> Description -> Metric (V2.Counter' a)
 new name description =
     Metric
         { name
@@ -53,7 +64,7 @@ new name description =
         }
 
 
-instance IsMetric V2.Counter where
+instance (SampleValueNum a, Ord a, V2.HasCounterBackend a) => IsMetric (V2.Counter' a) where
     getMetricType _ = MetricTypeCounter
     getMetricSamples counter = do
         n <- sample counter
@@ -61,34 +72,46 @@ instance IsMetric V2.Counter where
 
 
 class IsCounter c where
-    getCounter :: c -> IO V2.Counter
-instance IsCounter V2.Counter where
+    type CounterElem c
+    getCounter :: c -> IO (V2.Counter' (CounterElem c))
+instance IsCounter (V2.Counter' a) where
+    type CounterElem (V2.Counter' a) = a
     getCounter = pure
-instance IsCounter (IO V2.Counter) where
+instance IsCounter (IO (V2.Counter' a)) where
+    type CounterElem (IO (V2.Counter' a)) = a
     getCounter = id
 
 
-inc :: (IsCounter c, MonadIO m) => c -> m ()
+type IsNumCounter c a =
+    ( IsCounter c
+    , a ~ CounterElem c
+    , V2.HasCounterBackend a
+    , Num a
+    , Ord a
+    )
+
+
+inc :: (IsNumCounter c a, MonadIO m) => c -> m ()
 inc c = liftIO $ V2.inc =<< getCounter c
 {-# INLINE inc #-}
 
 
-add :: (IsCounter c, MonadIO m) => c -> Int -> m ()
+add :: (IsNumCounter c a, MonadIO m) => c -> a -> m ()
 add c n = liftIO $ V2.add n =<< getCounter c
 {-# INLINE add #-}
 
 
-reset :: (IsCounter c, MonadIO m) => c -> m ()
+reset :: (IsNumCounter c a, MonadIO m) => c -> m ()
 reset c = liftIO $ V2.set 0 =<< getCounter c
 {-# INLINE reset #-}
 
 
-sample :: (IsCounter c, MonadIO m) => c -> m Int
+sample :: (IsNumCounter c a, MonadIO m) => c -> m a
 sample c = liftIO $ fmap V2.unCounterSample . V2.sample =<< getCounter c
 {-# INLINE sample #-}
 
 
-addAndSample :: (IsCounter c, MonadIO m) => c -> Int -> m Int
+addAndSample :: (IsNumCounter c a, MonadIO m) => c -> a -> m a
 addAndSample c n = liftIO $ fmap V2.unCounterSample . V2.addAndSample n =<< getCounter c
 {-# INLINE addAndSample #-}
 
@@ -98,7 +121,7 @@ addAndSample c n = liftIO $ fmap V2.unCounterSample . V2.addAndSample n =<< getC
 -- | Count the number of times a particular exception is thrown.
 countExceptions ::
     forall e c m a.
-    (IsCounter c, Exception e, MonadUnliftIO m) =>
+    (IsNumCounter c a, Exception e, MonadUnliftIO m) =>
     c -> m a -> m a
 countExceptions c = countExceptionsWhere c (\(_ :: e) -> True)
 {-# INLINE countExceptions #-}
@@ -108,7 +131,7 @@ countExceptions c = countExceptionsWhere c (\(_ :: e) -> True)
 -- include the exception in the count.
 countExceptionsWhere ::
     forall e c m a.
-    (IsCounter c, Exception e, MonadUnliftIO m) =>
+    (IsNumCounter c a, Exception e, MonadUnliftIO m) =>
     c -> (e -> Bool) -> m a -> m a
 countExceptionsWhere c f io = io `withException` \e -> when (f e) (inc c)
 {-# INLINE countExceptionsWhere #-}
