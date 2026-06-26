@@ -1,0 +1,6 @@
+---
+resolver: lts-24.46
+flags: {}
+packages:
+  - "."
+extra-deps: []
