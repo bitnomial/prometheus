@@ -14,13 +14,14 @@ module System.Metrics.Prometheus.Metric.Histogram (
 
 import Control.Applicative ((<$>))
 import Control.Monad (void)
-import Data.Bool (bool)
+import qualified Data.Foldable1 as Foldable1
 import Data.IORef (
     IORef,
     atomicModifyIORef',
     newIORef,
     readIORef,
  )
+import qualified Data.List.NonEmpty as NonEmpty
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 
@@ -37,7 +38,7 @@ data HistogramSample = HistogramSample
     , histSum :: !Double
     , histCount :: !Int
     }
-    deriving Show
+    deriving (Show)
 
 
 new :: [UpperBound] -> IO Histogram
@@ -65,9 +66,13 @@ observe x = void . observeAndSample x
 
 
 updateBuckets :: Double -> Buckets -> Buckets
-updateBuckets x = Map.mapWithKey updateBucket
-  where
-    updateBucket key val = bool val (val + 1) (x <= key)
+updateBuckets x buckets =
+    let matchingBuckets = filter (x <=) $ Map.keys buckets
+        bucketKey =
+            case NonEmpty.nonEmpty matchingBuckets of
+                Just bs -> Foldable1.minimum bs
+                Nothing -> error "Unexpectedly found zero matching buckets; at least the +Inf bucket should've been found."
+     in Map.adjust (+ 1) bucketKey buckets
 
 
 sample :: Histogram -> IO HistogramSample
