@@ -23,7 +23,8 @@ jobs:
           - "9.4.8"
           - "9.6.6"
           - "9.8.2"
-          - "9.10.1"
+          - "9.10.3"
+          - "9.12.4"
 
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -52,7 +53,7 @@ jobs:
       #     cabal test package:prometheus --enable-tests
 
   stack:
-    name: stack ${{ matrix.resolver }} / ${{ matrix.os }}
+    name: stack ${{ matrix.plan.resolver }} / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -60,12 +61,16 @@ jobs:
           - ubuntu-latest
           # - macOS-latest
         stack: ["latest"]
-        resolver:
-          - "--stack-yaml ./stack-8.10.yaml"
-          - "--stack-yaml ./stack-9.0.yaml"
-          - "--stack-yaml ./stack-9.2.yaml"
-          - "--stack-yaml ./stack-9.4.yaml"
-          - "--stack-yaml ./stack-9.6.yaml"
+        # ghc must match each snapshot's compiler exactly, since we build
+        # with --system-ghc against the GHC provisioned by the setup action.
+        plan:
+          - { resolver: "--stack-yaml ./stack-8.10.yaml", ghc: "8.10.7" }
+          - { resolver: "--stack-yaml ./stack-9.0.yaml",  ghc: "9.0.2" }
+          - { resolver: "--stack-yaml ./stack-9.2.yaml",  ghc: "9.2.8" }
+          - { resolver: "--stack-yaml ./stack-9.4.yaml",  ghc: "9.4.8" }
+          - { resolver: "--stack-yaml ./stack-9.6.yaml",  ghc: "9.6.6" }
+          - { resolver: "--stack-yaml ./stack-9.8.yaml",  ghc: "9.8.4" }
+          - { resolver: "--stack-yaml ./stack-9.10.yaml", ghc: "9.10.3" }
 
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -73,6 +78,7 @@ jobs:
     - uses: haskell-actions/setup@cd0d9bdd65b20557f41bea4dbe43d0b5fbbfe553 # v2.11.0
       name: Setup Haskell Stack
       with:
+        ghc-version: ${{ matrix.plan.ghc }}
         stack-version: ${{ matrix.stack }}
         enable-stack: true
 
@@ -80,11 +86,11 @@ jobs:
       name: Cache ~/.stack
       with:
         path: ~/.stack
-        key: ${{ matrix.os }}-stack-${{ matrix.resolver }}
+        key: ${{ matrix.os }}-stack-${{ matrix.plan.ghc }}
 
     - name: Build
       run: |
-        stack build --test --bench --no-run-tests --no-run-benchmarks --flag prometheus:buildexamples
+        stack ${{ matrix.plan.resolver }} --system-ghc --no-install-ghc build --test --bench --no-run-tests --no-run-benchmarks --flag prometheus:buildexamples
 
     # TODO: Actually add tests
     # - name: Test
