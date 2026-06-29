@@ -13,7 +13,8 @@
 -- variables in the same file as the functions they're instrumenting.
 --
 -- Note: globally registered metrics are only registered when it's used for the
--- first time, due to laziness.
+-- first time, due to laziness. See 'Prometheus.V3.TH' for one possible
+-- solution to this.
 --
 -- @
 -- {-# LANGUAGE OverloadedStrings #-}
