@@ -9,6 +9,7 @@ module System.Metrics.Prometheus.Metric.Histogram (
     observe,
     sample,
     observeAndSample,
+    reset,
 ) where
 
 import Control.Applicative ((<$>))
@@ -71,3 +72,24 @@ updateBuckets x = Map.mapWithKey updateBucket
 
 sample :: Histogram -> IO HistogramSample
 sample = readIORef . unHistogram
+
+
+-- | Reset the histogram back to its initial state: every bucket count, the
+-- sum, and the observation count return to 0. The bucket upper bounds are left
+-- unchanged.
+--
+-- This is /not/ part of the Prometheus client library specification, which
+-- only defines @observe@ for histograms. It is intended for resetting metrics
+-- between tests when they are defined as top-level values. On a live, scraped
+-- metric a reset looks like a counter reset (e.g. a process restart) to
+-- Prometheus, which its @rate@/@increase@ functions handle, so prefer
+-- 'observe' there and reserve 'reset' for test isolation.
+reset :: Histogram -> IO ()
+reset (Histogram ref) = atomicModifyIORef' ref $ \histData ->
+    ( histData
+        { histBuckets = 0 <$ histBuckets histData
+        , histSum = 0
+        , histCount = 0
+        }
+    , ()
+    )
