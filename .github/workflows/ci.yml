@@ -10,6 +10,7 @@ jobs:
     name: cabal / ghc-${{ matrix.ghc }} / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os:
           - ubuntu-latest
@@ -52,10 +53,48 @@ jobs:
       #   run: |
       #     cabal test package:prometheus --enable-tests
 
+  cabal-ghc-stats:
+    name: cabal / prometheus-ghc-stats / ghc-${{ matrix.ghc }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        cabal:
+          - "latest"
+        # prometheus-ghc-stats is GHC2024 and uses RTSStats fields that only
+        # exist on newer compilers, so it requires GHC >= 9.10.
+        ghc:
+          - "9.10.3"
+          - "9.12.4"
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - uses: haskell-actions/setup@cd0d9bdd65b20557f41bea4dbe43d0b5fbbfe553 # v2.11.0
+        id: setup-haskell-cabal
+        name: Setup Haskell
+        with:
+          ghc-version: ${{ matrix.ghc }}
+          cabal-version: ${{ matrix.cabal }}
+
+      - uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
+        name: Cache cabal-store
+        with:
+          path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+          key: ${{ matrix.os }}-${{ matrix.ghc }}-cabal-ghc-stats
+
+      - name: Build
+        run: |
+          cabal update
+          cabal build all --project-dir=prometheus-ghc-stats --enable-tests --enable-benchmarks --write-ghc-environment-files=always
+
   stack:
     name: stack ${{ matrix.plan.resolver }} / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os:
           - ubuntu-latest

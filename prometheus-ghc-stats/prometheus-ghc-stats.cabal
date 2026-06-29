@@ -1,0 +1,49 @@
+cabal-version:       3.0
+name:                prometheus-ghc-stats
+version:             0.1.0
+synopsis:            Export GHC RTS metrics through the Prometheus registry
+homepage:            http://github.com/bitnomial/prometheus
+bug-reports:         http://github.com/bitnomial/prometheus/issues
+license:             BSD-3-Clause
+license-file:        LICENSE
+author:              Bitnomial
+maintainer:          opensource@bitnomial.com
+copyright:           Bitnomial, Inc. (c) 2026
+category:            Metrics, Monitoring, System
+build-type:          Simple
+extra-source-files:  README.md
+                   , CHANGELOG.md
+tested-with:         GHC == 9.10.3
+                   , GHC == 9.12.4
+
+description:
+  Export GHC RTS metrics (from "GHC.Stats") through the @prometheus@ registry.
+  .
+  'System.Metrics.Prometheus.GHCStats.registerGHCStats' registers a handle for
+  each 'GHC.Stats.RTSStats' field in the current @RegistryT@ and returns an
+  @IO ()@ action that snapshots the RTS stats and updates every handle. Run the
+  executable with @+RTS -T@ to enable the underlying counters.
+
+library
+  hs-source-dirs:   src/lib
+  default-language: GHC2024
+
+  ghc-options: -Wall
+               -Wmissing-home-modules
+               -Widentities
+               -Wincomplete-uni-patterns
+               -Wincomplete-record-updates
+               -Wpartial-fields
+               -Wmissing-export-lists
+               -Wno-unused-do-bind
+               -Wunused-packages
+               -funbox-strict-fields
+
+  exposed-modules: System.Metrics.Prometheus.GHCStats
+
+  build-depends: base       >= 4.16 && < 5
+               , prometheus >= 2.3  && < 2.5
+
+source-repository head
+  type:     git
+  location: https://github.com/bitnomial/prometheus

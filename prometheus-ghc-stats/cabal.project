@@ -1,0 +1,10 @@
+-- Project for building prometheus-ghc-stats against the in-tree prometheus
+-- library. prometheus-ghc-stats is GHC2024 and requires GHC >= 9.10, so it is
+-- kept out of the repo-root build (which targets prometheus across a wider GHC
+-- range). Build from the repo root with:
+--
+--   cabal build all --project-dir=prometheus-ghc-stats
+--
+packages:
+  .
+  ../
