@@ -3,4 +3,5 @@ resolver: lts-24.46
 flags: {}
 packages:
   - "."
+  - prometheus-ghc-stats
 extra-deps: []
