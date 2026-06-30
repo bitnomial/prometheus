@@ -46,7 +46,7 @@ registerCounter name labels = flip modifyMVarMasked register . unRegistry
     register = fmap swap . R.registerCounter name labels
 
 
-registerGauge :: Name -> Labels -> Registry -> IO Gauge
+registerGauge :: Name -> Labels -> Registry -> IO (Gauge Double)
 registerGauge name labels = flip modifyMVarMasked register . unRegistry
   where
     register = fmap swap . R.registerGauge name labels

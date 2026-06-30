@@ -87,19 +87,40 @@ library
                  , System.Metrics.Prometheus.MetricId
                  , System.Metrics.Prometheus.Registry
                  , System.Metrics.Prometheus.RegistryT
+                 , Prometheus.V3
+                 , Prometheus.V3.Collector
+                 , Prometheus.V3.Encode
+                 , Prometheus.V3.Encode.Value
+                 , Prometheus.V3.Http.Serve
+                 , Prometheus.V3.Label
+                 , Prometheus.V3.LabelName
+                 , Prometheus.V3.Metric.Base
+                 , Prometheus.V3.Metric.Counter
+                 , Prometheus.V3.Metric.Gauge
+                 , Prometheus.V3.Metric.Histogram
+                 , Prometheus.V3.Metric.Labelled
+                 , Prometheus.V3.MetricName
+                 , Prometheus.V3.Name
+                 , Prometheus.V3.Registry
+                 , Prometheus.V3.Sample
+                 , Prometheus.V3.Utils.FromRealFrac
 
   build-depends: base            >= 4.9  && < 5
                , atomic-primops  >= 0.8  && < 0.9
                , bytestring      >= 0.10 && < 0.13
                , containers      >= 0.5  && < 0.8
+               , hashable
                , http-client     >= 0.4  && < 0.8
                , http-client-tls >= 0.3  && < 0.5
                , http-types      >= 0.8  && < 0.13
                , network-uri     >= 2.5  && < 2.7
                , text            >= 1.2  && < 2.2
+               , time
                , transformers    >= 0.4  && < 0.7
                , wai             >= 3.2  && < 3.3
                , warp            >= 3.2  && < 3.5
+               , unliftio
+               , unordered-containers
 
 executable prometheus-example
   main-is: Example.hs
@@ -108,6 +129,21 @@ executable prometheus-example
   ghc-options: -Wall -fwarn-tabs -fno-warn-unused-do-bind
 
   build-depends: base
+               , prometheus
+
+  if flag(buildexamples)
+    buildable:         True
+  else
+    buildable:         False
+
+executable prometheus-example-v3
+  main-is: ExampleV3.hs
+  default-language: Haskell2010
+
+  ghc-options: -Wall -fwarn-tabs -fno-warn-unused-do-bind
+
+  build-depends: base
+               , hashable
                , prometheus
 
   if flag(buildexamples)

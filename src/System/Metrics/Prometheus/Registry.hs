@@ -59,7 +59,7 @@ registerCounter name labels registry = do
     collision k _ _ = throw (KeyError k)
 
 
-registerGauge :: Name -> Labels -> Registry -> IO (Gauge, Registry)
+registerGauge :: Name -> Labels -> Registry -> IO (Gauge Double, Registry)
 registerGauge name labels registry = do
     gauge <- Gauge.new
     return (gauge, Registry $ Map.insertWithKey collision mid (GaugeMetric gauge) (unRegistry registry))

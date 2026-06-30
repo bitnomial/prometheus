@@ -14,21 +14,20 @@ import System.Metrics.Prometheus.Metric.Summary (SummarySample)
 
 data Metric
     = CounterMetric Counter
-    | GaugeMetric Gauge
-    | -- | Summary S.Summary
-      HistogramMetric Histogram
+    | GaugeMetric (Gauge Double) -- \| Summary S.Summary
+    | HistogramMetric Histogram
 
 
 data MetricSample
-    = CounterMetricSample CounterSample
-    | GaugeMetricSample GaugeSample
+    = CounterMetricSample (CounterSample Int)
+    | GaugeMetricSample (GaugeSample Double)
     | HistogramMetricSample HistogramSample
     | SummaryMetricSample SummarySample
 
 
 metricSample ::
-    (CounterSample -> a) ->
-    (GaugeSample -> a) ->
+    (CounterSample Int -> a) ->
+    (GaugeSample Double -> a) ->
     (HistogramSample -> a) ->
     (SummarySample -> a) ->
     MetricSample ->

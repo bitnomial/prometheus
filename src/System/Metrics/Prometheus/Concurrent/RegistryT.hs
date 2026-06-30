@@ -39,7 +39,7 @@ registerCounter :: MonadIO m => Name -> Labels -> RegistryT m Counter
 registerCounter n l = RegistryT ask >>= liftIO . R.registerCounter n l
 
 
-registerGauge :: MonadIO m => Name -> Labels -> RegistryT m Gauge
+registerGauge :: MonadIO m => Name -> Labels -> RegistryT m (Gauge Double)
 registerGauge n l = RegistryT ask >>= liftIO . R.registerGauge n l
 
 
