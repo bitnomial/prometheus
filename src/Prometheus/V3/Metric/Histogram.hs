@@ -41,6 +41,14 @@ import UnliftIO (MonadUnliftIO)
 
 
 -- | An alias for @'Registry.register' (new ...)@.
+--
+-- Usages MUST be annotated with @OPAQUE@.
+--
+-- @
+-- fooHistogram :: Prom.Histogram
+-- fooHistogram = Histogram.register "foo_total" "Number of foos" [0, 1, 10]
+-- {-# OPAQUE fooHistogram #-}
+-- @
 register :: MetricName -> Description -> [V2.UpperBound] -> V2.Histogram
 register name description bounds = Registry.register $ new name description bounds
 {-# INLINE register #-}
