@@ -77,7 +77,7 @@ instance (IsMetric a) => ToCollector (Metric a) where
 
 -- | Register the given metric with the global registry.
 --
--- Only safe to use with top-level variables, which must be annotated with OPAQUE.
+-- Only safe to use with top-level variables, which must be annotated with @OPAQUE@.
 register :: (ToCollector a) => a -> RegisterResult a
 register = unsafePerformIO . registerTo globalRegistry
 {-# INLINE register #-}

@@ -46,6 +46,18 @@ import UnliftIO.Exception (Exception, withException)
 
 
 -- | An alias for @'Registry.register' (new ...)@.
+--
+-- Usages MUST be annotated with @OPAQUE@.
+--
+-- @
+-- fooCounter :: Prom.Counter
+-- fooCounter = Counter.register "foo_total" "Number of foos"
+-- {-# OPAQUE fooCounter #-}
+-- @
+--
+-- == Warnings
+--
+--   * Will not work correctly if counter type is polymorphic
 register ::
     (Num a, Ord a, ToSampleValue a, V2.HasCounterBackend a) =>
     MetricName -> Description -> (V2.Counter' a)

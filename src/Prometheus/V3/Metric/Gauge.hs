@@ -47,6 +47,18 @@ import UnliftIO.Exception (bracket_)
 
 
 -- | An alias for @'Registry.register' (new ...)@.
+--
+-- Usages MUST be annotated with @OPAQUE@.
+--
+-- @
+-- fooGauge :: Prom.Gauge
+-- fooGauge = Gauge.register "foo_total" "Number of foos"
+-- {-# OPAQUE fooGauge #-}
+-- @
+--
+-- == Warnings
+--
+--   * Will not work correctly if gauge type is polymorphic
 register :: (Num a, ToSampleValue a) => MetricName -> Description -> V2.Gauge a
 register name description = Registry.register $ new name description
 {-# INLINE register #-}
