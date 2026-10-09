@@ -16,6 +16,7 @@ import Data.ByteString.Builder
 import qualified Data.List as List
 import qualified Data.Map as Map
 import Data.Text (Text)
+import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import Prometheus.V3.Collector (Collector (..))
 import Prometheus.V3.Encode.Value
@@ -62,8 +63,11 @@ encodeCollectorSample opts (collector, samples) =
         ]
   where
     name = text $ showName opts.escapeScheme collector.name
-    description = text collector.description
+    description = text $ escapeDescription collector.description
     type_ = encodeMetricType collector.type_
+
+    -- Escape backslashes and line feed characters
+    escapeDescription = Text.replace "\\" "\\\\" . Text.replace "\n" "\\n"
 
 
 encodeSample :: Options -> Builder -> Sample -> Builder
