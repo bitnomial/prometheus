@@ -17,12 +17,12 @@ module Prometheus.V3.Metric.Base (
 import Control.Monad.IO.Class (liftIO)
 import Data.Proxy (Proxy (..))
 import Data.Text (Text)
-import Data.Time (diffUTCTime, getCurrentTime)
 import Prometheus.V3.Label (LabelName)
 import Prometheus.V3.MetricName (MetricName)
 import Prometheus.V3.Sample (Sample)
 import UnliftIO (MonadUnliftIO)
 import UnliftIO.Exception (bracket)
+import UnliftIO.IO (getMonotonicTime)
 
 
 type Description = Text
@@ -57,8 +57,8 @@ class IsMetric a where
 {----- Helpers -----}
 
 withDuration :: (MonadUnliftIO m) => (Double -> m ()) -> m a -> m a
-withDuration f action = bracket (liftIO getCurrentTime) finalize (\_ -> action)
+withDuration f action = bracket (liftIO getMonotonicTime) finalize (\_ -> action)
   where
     finalize start = do
-        end <- liftIO getCurrentTime
-        f (realToFrac $ end `diffUTCTime` start)
+        end <- liftIO getMonotonicTime
+        f (end - start)
