@@ -25,7 +25,7 @@ import Data.Text.Encoding (encodeUtf8)
 import Data.Text.Lazy (toStrict)
 import Data.Text.Lazy.Builder (toLazyText)
 import Data.Text.Lazy.Builder.RealFloat (
-    FPFormat (Generic),
+    FPFormat (Fixed),
     formatRealFloat,
  )
 import Prelude hiding (null)
@@ -87,7 +87,7 @@ textValue x
     | isInfinite x && x > 0 = "+Inf"
     | isInfinite x && x < 0 = "-Inf"
     | isNaN x = "NaN"
-    | otherwise = toStrict . toLazyText $ formatRealFloat Generic Nothing x
+    | otherwise = toStrict . toLazyText $ formatRealFloat Fixed Nothing x
 
 
 encodeDouble :: RealFloat f => f -> Builder
