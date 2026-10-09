@@ -10,6 +10,7 @@ maintainer:          luke@bitnomial.com, opensource@bitnomial.com
 copyright:           Bitnomial, Inc. (c) 2016-2023
 category:            Metrics, Monitoring, Web, System
 build-type:          Simple
+tested-with:         GHC == 9.6.6, GHC == 9.8.2, GHC == 9.8.4, GHC == 9.10.3, GHC == 9.12.4
 cabal-version:       >=1.10
 
 description:
@@ -88,7 +89,7 @@ library
                  , System.Metrics.Prometheus.Registry
                  , System.Metrics.Prometheus.RegistryT
 
-  build-depends: base            >= 4.9  && < 5
+  build-depends: base            >= 4.18 && < 5
                , atomic-primops  >= 0.8  && < 0.9
                , bytestring      >= 0.10 && < 0.13
                , containers      >= 0.5  && < 0.8

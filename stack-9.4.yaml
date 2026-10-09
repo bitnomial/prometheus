@@ -1,6 +1,0 @@
----
-resolver: lts-21.25
-flags: {}
-packages:
-  - "."
-extra-deps: []

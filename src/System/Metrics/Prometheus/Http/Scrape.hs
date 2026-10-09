@@ -7,7 +7,6 @@ module System.Metrics.Prometheus.Http.Scrape (
     prometheusApp,
 ) where
 
-import Control.Applicative ((<$>))
 import Control.Monad.IO.Class (
     MonadIO,
     liftIO,

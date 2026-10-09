@@ -12,7 +12,6 @@ module System.Metrics.Prometheus.Metric.Histogram (
     reset,
 ) where
 
-import Control.Applicative ((<$>))
 import Control.Monad (void)
 import Data.Bool (bool)
 import Data.IORef (

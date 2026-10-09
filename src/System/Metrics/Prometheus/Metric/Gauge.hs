@@ -11,7 +11,6 @@ module System.Metrics.Prometheus.Metric.Gauge (
     modifyAndSample,
 ) where
 
-import Control.Applicative ((<$>))
 import Data.IORef (IORef, atomicModifyIORef', newIORef)
 
 

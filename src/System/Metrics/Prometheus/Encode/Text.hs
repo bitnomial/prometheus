@@ -9,7 +9,6 @@ import Data.List (
     intersperse,
  )
 import qualified Data.Map as Map
-import Data.Monoid ((<>))
 
 import System.Metrics.Prometheus.Encode.Text.Histogram (encodeHistogram)
 import System.Metrics.Prometheus.Encode.Text.MetricId (
