@@ -1,5 +1,5 @@
 
-## 2.5.0
+## Unreleased
 
 *   Raise the minimum supported GHC to 9.6 (`base >= 4.18`). Older compilers
     are no longer tested in CI.
