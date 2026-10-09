@@ -31,6 +31,7 @@ module Prometheus.V3.Metric.Histogram (
 
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Map as Map
+import GHC.Stack (HasCallStack)
 import Prometheus.V3.Label (toLabelValue)
 import Prometheus.V3.Metric.Base
 import Prometheus.V3.Metric.Labelled (labels)
@@ -90,6 +91,7 @@ instance IsMetric V2.Histogram where
 
 
 linearBuckets ::
+    (HasCallStack) =>
     -- | Start
     V2.UpperBound ->
     -- | Width
@@ -97,10 +99,13 @@ linearBuckets ::
     -- | Count
     Int ->
     [V2.UpperBound]
-linearBuckets start width count = [start + (width * fromIntegral i) | i <- [1 .. count]]
+linearBuckets start width count
+    | count < 1 = error "linearBuckets: count must be positive"
+    | otherwise = [start + (width * fromIntegral i) | i <- [0 .. count - 1]]
 
 
 expBuckets ::
+    (HasCallStack) =>
     -- | Start
     V2.UpperBound ->
     -- | Factor
@@ -108,7 +113,11 @@ expBuckets ::
     -- | Count
     Int ->
     [V2.UpperBound]
-expBuckets start factor count = [start * (factor ** fromIntegral i) | i <- [1 .. count]]
+expBuckets start factor count
+    | count < 1 = error "expBuckets: count must be positive"
+    | start <= 0 = error "expBuckets: start must be positive"
+    | factor <= 1 = error "expBuckets: factor must be greater than 1"
+    | otherwise = [start * (factor ** fromIntegral i) | i <- [0 .. count - 1]]
 
 
 class IsHistogram h where
