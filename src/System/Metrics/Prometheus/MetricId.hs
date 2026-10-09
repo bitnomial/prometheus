@@ -7,8 +7,6 @@ import Data.Bifunctor (first)
 import Data.Char (isDigit)
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Data.Monoid (Monoid)
-import Data.Semigroup (Semigroup)
 import Data.String (IsString (..))
 import Data.Text (Text)
 import qualified Data.Text as Text

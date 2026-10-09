@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-
 module System.Metrics.Prometheus.Registry (
     Registry,
     RegistrySample (..),
@@ -12,11 +10,9 @@ module System.Metrics.Prometheus.Registry (
     sample,
 ) where
 
-import Control.Applicative ((<$>))
 import Control.Exception (Exception, throw)
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Data.Typeable (Typeable)
 
 import System.Metrics.Prometheus.Metric (
     Metric (..),
@@ -42,7 +38,7 @@ newtype Registry = Registry {unRegistry :: Map MetricId Metric}
 newtype RegistrySample = RegistrySample {unRegistrySample :: Map MetricId MetricSample}
 
 
-newtype KeyError = KeyError MetricId deriving (Show, Typeable)
+newtype KeyError = KeyError MetricId deriving (Show)
 instance Exception KeyError
 
 

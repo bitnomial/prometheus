@@ -9,7 +9,6 @@ module System.Metrics.Prometheus.Concurrent.Registry (
     sample,
 ) where
 
-import Control.Applicative ((<$>))
 import Control.Concurrent.MVar (
     MVar,
     modifyMVarMasked,

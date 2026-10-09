@@ -9,7 +9,6 @@ module System.Metrics.Prometheus.Metric.Counter (
     set,
 ) where
 
-import Control.Applicative ((<$>))
 import Control.Monad (when)
 import Data.Atomics.Counter (AtomicCounter, incrCounter, newCounter, writeCounter)
 

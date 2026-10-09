@@ -20,7 +20,6 @@ import Data.ByteString.Builder (
     intDec,
  )
 import Data.List (intersperse)
-import Data.Monoid ((<>))
 import Data.Text (Text, replace)
 import Data.Text.Encoding (encodeUtf8)
 import Data.Text.Lazy (toStrict)

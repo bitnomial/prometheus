@@ -1,4 +1,9 @@
 
+## 2.5.0
+
+*   Raise the minimum supported GHC to 9.6 (`base >= 4.18`). Older compilers
+    are no longer tested in CI.
+
 ## 2.4.0
 
 *   Add a `reset` function to the

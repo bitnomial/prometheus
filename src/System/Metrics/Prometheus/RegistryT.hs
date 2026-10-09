@@ -2,7 +2,6 @@
 
 module System.Metrics.Prometheus.RegistryT where
 
-import Control.Applicative ((<$>))
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Trans.Class (MonadTrans)
 import Control.Monad.Trans.State.Strict (
