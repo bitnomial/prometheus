@@ -7,7 +7,7 @@ module Prometheus.V3.Sample (
     defaultSample,
 
     -- * SampleValue
-    SampleValue (..),
+    SampleValue,
     ToSampleValue (..),
     SampleValueNum,
 ) where
@@ -25,32 +25,28 @@ data Sample = Sample
     }
 
 
-data SampleValue
-    = SampleValueInt64 Int64
-    | SampleValueDouble Double
-
-
 defaultSample :: Sample
 defaultSample =
     Sample
         { suffix = ""
         , labels = []
-        , value = SampleValueInt64 0
+        , value = 0
         }
 
 
+type SampleValue = Double
 class ToSampleValue a where
     toSampleValue :: a -> SampleValue
 instance ToSampleValue Int where
-    toSampleValue = SampleValueInt64 . fromIntegral
+    toSampleValue = fromIntegral
 instance ToSampleValue Int64 where
-    toSampleValue = SampleValueInt64
+    toSampleValue = fromIntegral
 instance ToSampleValue Word64 where
-    toSampleValue = SampleValueInt64 . fromIntegral
+    toSampleValue = fromIntegral
 instance ToSampleValue Double where
-    toSampleValue = SampleValueDouble
+    toSampleValue = id
 instance ToSampleValue Float where
-    toSampleValue = SampleValueDouble . realToFrac
+    toSampleValue = realToFrac
 
 
 type SampleValueNum a = (Num a, ToSampleValue a)

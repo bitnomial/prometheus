@@ -27,7 +27,7 @@ import Prometheus.V3.Name (EscapeScheme (..), showName)
 import Prometheus.V3.Registry (RegistrySample)
 import Prometheus.V3.Sample (
     Sample (..),
-    SampleValue (..),
+    SampleValue,
  )
 
 
@@ -97,9 +97,7 @@ encodeLabel opts (name, value) =
 
 
 encodeSampleValue :: SampleValue -> Builder
-encodeSampleValue = \case
-    SampleValueInt64 n -> int64Dec n
-    SampleValueDouble n -> text $ showPromDouble n
+encodeSampleValue = text . showPromDouble
 
 
 encodeMetricType :: MetricType -> Builder

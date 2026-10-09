@@ -13,7 +13,7 @@ module Prometheus.V3.Collector (
     Description,
     MetricType (..),
     Sample (..),
-    SampleValue (..),
+    SampleValue,
     defaultSample,
     ToSampleValue (..),
 ) where
@@ -25,7 +25,7 @@ import Prometheus.V3.Metric.Base (
  )
 import Prometheus.V3.Sample (
     Sample (..),
-    SampleValue (..),
+    SampleValue,
     ToSampleValue (..),
     defaultSample,
  )
