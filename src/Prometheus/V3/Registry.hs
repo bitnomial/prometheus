@@ -38,6 +38,7 @@ import Prometheus.V3.Metric.Base (
  )
 import Prometheus.V3.Sample (Sample)
 import System.IO.Unsafe (unsafePerformIO)
+import UnliftIO.Exception (Exception, impureThrow)
 import UnliftIO.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
 
 
@@ -91,8 +92,15 @@ registerTo (Registry registryMapRef) a = do
         type_ = getCollectorType a
     (getSamples, res) <- getCollectorSample a
     atomicModifyIORef' registryMapRef $ \registryMap ->
-        (Map.insert name Collector{..} registryMap, ())
+        (Map.insertWithKey collision name Collector{..} registryMap, ())
     pure res
+  where
+    collision k _ _ = impureThrow (MetricRegisteredMultipleTimesError k)
+
+
+newtype MetricRegisteredMultipleTimesError = MetricRegisteredMultipleTimesError MetricName
+    deriving (Show)
+instance Exception MetricRegisteredMultipleTimesError
 
 
 -- | Unregister the given metric from the given registry.
