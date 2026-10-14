@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE TupleSections #-}
 
 module System.Metrics.Prometheus.Metric.Histogram (
@@ -12,19 +13,17 @@ module System.Metrics.Prometheus.Metric.Histogram (
     reset,
 ) where
 
-import Control.Monad (void)
-import Data.Bool (bool)
-import Data.IORef (
-    IORef,
-    atomicModifyIORef',
-    newIORef,
-    readIORef,
- )
+import Control.Monad (when)
+import Data.List (sort)
+import qualified Data.Map as Map
 import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
+import qualified Data.Vector.Unboxed as Vector.Unboxed
+import Data.Vector.Unboxed.Mutable (IOVector)
+import qualified Data.Vector.Unboxed.Mutable as IOVector
+import UnliftIO.MVar (MVar, modifyMVar, modifyMVar_, newMVar, withMVar)
 
 
-newtype Histogram = Histogram {unHistogram :: IORef HistogramSample}
+newtype Histogram = Histogram (MVar HistogramState)
 
 
 type UpperBound = Double -- Inclusive upper bounds
@@ -33,44 +32,59 @@ type Buckets = Map UpperBound Double
 
 data HistogramSample = HistogramSample
     { histBuckets :: !Buckets
+    -- ^ Cumulative counts
     , histSum :: !Double
     , histCount :: !Int
     }
-    deriving Show
+    deriving (Show)
+
+
+data HistogramState = HistogramState
+    { histStateBuckets :: !(IOVector (UpperBound, Double))
+    -- ^ Contains cumulative counts
+    --
+    -- Invariants:
+    --   * Upper bounds are sorted low to high
+    --   * Last element is Infinity
+    , histStateSum :: !Double
+    , histStateCount :: !Int
+    }
 
 
 new :: [UpperBound] -> IO Histogram
-new buckets = Histogram <$> newIORef empty
+new buckets = do
+    bucketsVec <-
+        Vector.Unboxed.thaw . Vector.Unboxed.fromList $
+            [ (bucket, 0)
+            | bucket <- sort $ buckets <> [read "Infinity"]
+            ]
+    Histogram <$> newMVar (mkEmpty bucketsVec)
   where
-    empty = HistogramSample (Map.fromList $ map (,0) (read "Infinity" : buckets)) zeroSum zeroCount
-    zeroSum = 0.0
-    zeroCount = 0
-
-
-observeAndSample :: Double -> Histogram -> IO HistogramSample
-observeAndSample x = flip atomicModifyIORef' update . unHistogram
-  where
-    update histData = (hist' histData, hist' histData)
-    hist' histData =
-        histData
-            { histBuckets = updateBuckets x $ histBuckets histData
-            , histSum = histSum histData + x
-            , histCount = histCount histData + 1
+    mkEmpty bucketsVec =
+        HistogramState
+            { histStateBuckets = bucketsVec
+            , histStateSum = 0
+            , histStateCount = 0
             }
 
 
+observeAndSample :: Double -> Histogram -> IO HistogramSample
+observeAndSample x (Histogram var) =
+    modifyMVar var $ \state -> do
+        state' <- observeAndSampleState x state
+        sample_ <- toSample state'
+        pure (state', sample_)
+
+
 observe :: Double -> Histogram -> IO ()
-observe x = void . observeAndSample x
-
-
-updateBuckets :: Double -> Buckets -> Buckets
-updateBuckets x = Map.mapWithKey updateBucket
-  where
-    updateBucket key val = bool val (val + 1) (x <= key)
+observe x (Histogram var) = modifyMVar_ var (observeAndSampleState x)
 
 
 sample :: Histogram -> IO HistogramSample
-sample = readIORef . unHistogram
+sample (Histogram var) =
+    -- Do NOT use readMVar; make sure no one else is modifying the bucket
+    -- counts when we're sampling
+    withMVar var toSample
 
 
 -- | Reset the histogram back to its initial state: every bucket count, the
@@ -84,11 +98,38 @@ sample = readIORef . unHistogram
 -- Prometheus, which its @rate@/@increase@ functions handle, so prefer
 -- 'observe' there and reserve 'reset' for test isolation.
 reset :: Histogram -> IO ()
-reset (Histogram ref) = atomicModifyIORef' ref $ \histData ->
-    ( histData
-        { histBuckets = 0 <$ histBuckets histData
-        , histSum = 0
-        , histCount = 0
-        }
-    , ()
-    )
+reset (Histogram var) = modifyMVar_ var $ \state -> do
+    IOVector.iforM_ state.histStateBuckets $ \i (bucket, _) -> do
+        IOVector.unsafeWrite state.histStateBuckets i (bucket, 0)
+    pure state{histStateSum = 0, histStateCount = 0}
+
+
+observeAndSampleState :: Double -> HistogramState -> IO HistogramState
+observeAndSampleState x state = do
+    IOVector.iforM_ state.histStateBuckets $ \i (bucket, count) -> do
+        when (x <= bucket) $ do
+            IOVector.unsafeWrite state.histStateBuckets i (bucket, count + 1)
+    pure
+        state
+            { histStateSum = state.histStateSum + x
+            , histStateCount = state.histStateCount + 1
+            }
+
+
+toSample :: HistogramState -> IO HistogramSample
+toSample state = do
+    buckets <- toList state.histStateBuckets
+    pure
+        HistogramSample
+            { histBuckets = Map.fromAscList buckets
+            , histSum = state.histStateSum
+            , histCount = state.histStateCount
+            }
+  where
+    toList v = go (IOVector.length v - 1) []
+      where
+        go i acc
+            | i < 0 = pure acc
+            | otherwise = do
+                x <- IOVector.unsafeRead v i
+                go (i - 1) (x : acc)
