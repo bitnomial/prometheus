@@ -1,0 +1,167 @@
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE NoFieldSelectors #-}
+-- Remove after inlining V2.Gauge
+{-# OPTIONS_GHC -Wno-orphans #-}
+
+module Prometheus.V3.Metric.Gauge (
+    V2.Gauge,
+    register,
+    new,
+    newAt,
+
+    -- * Methods
+    IsGauge (..),
+    IsNumGauge,
+    inc,
+    add,
+    dec,
+    sub,
+    set,
+    sample,
+    modifyAndSample,
+
+    -- ** Helpers
+    setToCurrentTime,
+    trackInProgress,
+    time,
+
+    -- * Re-exports
+    labels,
+) where
+
+import Control.Monad.IO.Class (MonadIO, liftIO)
+import Data.Time.Clock.POSIX (getPOSIXTime)
+import Data.Typeable (Typeable)
+import Prometheus.V3.Metric.Base
+import Prometheus.V3.Metric.Labelled (labels)
+import qualified Prometheus.V3.Registry as Registry
+import Prometheus.V3.Sample
+import Prometheus.V3.Utils.FromRealFrac (FromRealFrac, fromRealFrac)
+import qualified System.Metrics.Prometheus.Metric.Gauge as V2
+import UnliftIO (MonadUnliftIO)
+import UnliftIO.Exception (bracket_)
+
+
+-- | An alias for @'Registry.register' (new ...)@.
+--
+-- Usages MUST be annotated with @OPAQUE@.
+--
+-- @
+-- fooGauge :: Prom.Gauge
+-- fooGauge = Gauge.register "foo_total" "Number of foos"
+-- {-# OPAQUE fooGauge #-}
+-- @
+--
+-- == Warnings
+--
+--   * Will not work correctly if gauge type is polymorphic
+register :: (Num a, ToSampleValue a, Typeable a) => MetricName -> Description -> V2.Gauge a
+register name description = Registry.register $ new name description
+{-# INLINE register #-}
+
+
+new :: (Num a) => MetricName -> Description -> Metric (V2.Gauge a)
+new name description = newAt name description 0
+
+
+newAt :: (Num a) => MetricName -> Description -> a -> Metric (V2.Gauge a)
+newAt name description val =
+    Metric
+        { name
+        , description
+        , initialize = do
+            gauge <- V2.new
+            set gauge val
+            pure gauge
+        }
+
+
+instance (SampleValueNum a) => IsMetric (V2.Gauge a) where
+    getMetricType _ = MetricTypeGauge
+    getMetricSamples gauge = do
+        n <- sample gauge
+        pure [defaultSample{value = toSampleValue n}]
+
+
+class IsGauge g where
+    type GaugeElem g
+    load :: g -> IO (V2.Gauge (GaugeElem g))
+instance IsGauge (V2.Gauge a) where
+    type GaugeElem (V2.Gauge a) = a
+    load = pure
+instance IsGauge (IO (V2.Gauge a)) where
+    type GaugeElem (IO (V2.Gauge a)) = a
+    load = id
+instance (SampleValueNum a, Typeable a) => IsGauge (Metric (V2.Gauge a)) where
+    type GaugeElem (Metric (V2.Gauge a)) = a
+    load = Registry.getOrRegister
+
+
+type IsNumGauge g a = (IsGauge g, a ~ GaugeElem g, Num a)
+
+
+inc :: (IsNumGauge g a, MonadIO m) => g -> m ()
+inc g = liftIO $ V2.inc =<< load g
+{-# INLINE inc #-}
+
+
+add :: (IsNumGauge g a, MonadIO m) => g -> a -> m ()
+add g x = liftIO $ V2.add x =<< load g
+{-# INLINE add #-}
+
+
+dec :: (IsNumGauge g a, MonadIO m) => g -> m ()
+dec g = liftIO $ V2.dec =<< load g
+{-# INLINE dec #-}
+
+
+sub :: (IsNumGauge g a, MonadIO m) => g -> a -> m ()
+sub g x = liftIO $ V2.sub x =<< load g
+{-# INLINE sub #-}
+
+
+set :: (IsNumGauge g a, MonadIO m) => g -> a -> m ()
+set g x = liftIO $ V2.set x =<< load g
+{-# INLINE set #-}
+
+
+sample :: (IsNumGauge g a, MonadIO m) => g -> m a
+sample g = liftIO $ fmap V2.unGaugeSample . V2.sample =<< load g
+{-# INLINE sample #-}
+
+
+modifyAndSample :: (IsNumGauge g a, MonadIO m) => g -> (a -> a) -> m a
+modifyAndSample g f = liftIO $ fmap V2.unGaugeSample . V2.modifyAndSample f =<< load g
+{-# INLINE modifyAndSample #-}
+
+
+{----- Helpers -----}
+
+-- | Set to the current number of seconds since the epoch.
+setToCurrentTime ::
+    (IsGauge g, FromRealFrac (GaugeElem g), MonadIO m) =>
+    g -> m ()
+setToCurrentTime g = do
+    now <- liftIO getPOSIXTime
+    g' <- liftIO $ load g
+    set g' (fromRealFrac now)
+{-# INLINE setToCurrentTime #-}
+
+
+-- | Increment the gauge when the given action is running and decrement when it's exited.
+trackInProgress :: (IsNumGauge g a, MonadUnliftIO m) => g -> m a -> m a
+trackInProgress g = bracket_ (inc g) (dec g)
+{-# INLINE trackInProgress #-}
+
+
+-- | Set the gauge to the duration of the given action.
+time ::
+    (IsGauge g, FromRealFrac (GaugeElem g), MonadUnliftIO m) =>
+    g -> m a -> m a
+time g = withDuration (set g . fromRealFrac)
+{-# INLINE time #-}

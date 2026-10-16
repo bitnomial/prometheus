@@ -149,5 +149,5 @@ setCounterFrom :: Integral a => s -> (s -> a) -> Counter -> IO ()
 setCounterFrom s f = Counter.set (fromIntegral (f s))
 
 
-setGaugeFrom :: Integral a => s -> (s -> a) -> Gauge -> IO ()
+setGaugeFrom :: Integral a => s -> (s -> a) -> Gauge Double -> IO ()
 setGaugeFrom s f = Gauge.set (fromIntegral (f s))
