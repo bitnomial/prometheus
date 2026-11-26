@@ -4,6 +4,12 @@
 *   Raise the minimum supported GHC to 9.6 (`base >= 4.18`). Older compilers
     are no longer tested in CI.
 
+*   `pushMetrics` now escapes the job name and grouping labels in the
+    Pushgateway URL. Values containing `/`, spaces, `?`, `#`, `%` or
+    non-ASCII characters were sent unescaped, so they were rejected or
+    recorded under the wrong grouping key. As in the Go client, empty values
+    and values containing `/` use the `@base64` form.
+
 ## 2.4.0
 
 *   Add a `reset` function to the
