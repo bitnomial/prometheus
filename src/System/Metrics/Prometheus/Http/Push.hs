@@ -7,9 +7,13 @@ module System.Metrics.Prometheus.Http.Push (
 
 import Control.Concurrent (threadDelay)
 import Control.Monad (forever)
+import qualified Data.ByteString.Base64.URL as Base64URL
 import Data.ByteString.Builder (toLazyByteString)
+import qualified Data.ByteString.Char8 as BS8
 import Data.Map (foldMapWithKey)
 import Data.Text (Text, unpack)
+import qualified Data.Text as Text
+import Data.Text.Encoding (encodeUtf8)
 import Network.HTTP.Client (
     Request (..),
     RequestBody (..),
@@ -25,6 +29,8 @@ import Network.HTTP.Types (hContentType, methodPut)
 import Network.URI (
     URI (..),
     URIAuth,
+    escapeURIString,
+    isUnreserved,
     nullURI,
  )
 
@@ -75,7 +81,16 @@ buildUri scheme gatewayName jobName (Labels ls) =
     nullURI
         { uriScheme = scheme
         , uriAuthority = Just gatewayName
-        , uriPath = "/metrics/job/" ++ unpack jobName ++ foldMapWithKey labelPath ls
+        , uriPath = "/metrics" ++ groupingKeyPath "job" jobName ++ foldMapWithKey groupingKeyPath ls
         }
-  where
-    labelPath k v = "/" ++ unpack k ++ "/" ++ unpack v
+
+
+-- | One @/name/value@ pair of the grouping key in the Pushgateway URL. As in
+-- the Go client, a value that is empty or contains a @/@ is sent base64url
+-- encoded (@/name\@base64/value@), since the Pushgateway would otherwise split
+-- it into more path segments; other values are percent-encoded.
+groupingKeyPath :: Text -> Text -> String
+groupingKeyPath k v
+    | Text.null v = "/" ++ unpack k ++ "@base64/="
+    | Text.any (== '/') v = "/" ++ unpack k ++ "@base64/" ++ BS8.unpack (Base64URL.encodeUnpadded (encodeUtf8 v))
+    | otherwise = "/" ++ unpack k ++ "/" ++ escapeURIString isUnreserved (unpack v)
